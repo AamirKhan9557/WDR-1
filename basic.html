@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Inventory Management Mini App</title>
+
+<style>
+    /* Basic styling to make the UI clean and centered */
+    body {
+        font-family: Arial, sans-serif; /* Sets clean text font */
+        background: #f4f4f4;           /* Light gray background */
+        margin: 0;
+        padding: 20px;
+    }
+
+    h1 {
+        text-align: center;            /* Centers the heading */
+        color: #333;
+    }
+
+    /* A container box for form + table */
+    .container {
+        width: 600px;
+        margin: auto;                  /* Centers container */
+        background: #fff;              /* White background */
+        padding: 20px;
+        border-radius: 8px;            /* Smooth edges */
+        box-shadow: 0 0 10px rgba(0,0,0,0.1); /* Soft shadow */
+    }
+
+    /* Style for all input and button elements */
+    input, button {
+        width: 100%;                   /* Full width */
+        padding: 10px;
+        margin: 8px 0;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+
+    button {
+        background: #3498db;           /* Blue button */
+        color: #fff;
+        border: none;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #2980b9;           /* Darker blue on hover */
+    }
+
+    table {
+        width: 100%;                   /* Full width table */
+        border-collapse: collapse;     /* No double borders */
+        margin-top: 20px;
+    }
+
+    th, td {
+        padding: 10px;
+        border: 1px solid #ddd;        /* Light borders */
+        text-align: center;
+    }
+
+    th {
+        background: #3498db;
+        color: white;
+    }
+
+    /* Style for delete button */
+    .delete-btn {
+        background: #e74c3c;           /* Red button */
+        padding: 5px 10px;
+        border: none;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .delete-btn:hover {
+        background: #c0392b;           /* Darker red on hover */
+    }
+</style>
+
+</head>
+<body>
+
+<h1>Inventory Management System</h1>
+
+<div class="container">
+    <h3>Add / Update Product</h3>
+
+    <!-- Hidden ID field (used internally for edit mode) -->
+    <input type="hidden" id="productId">
+
+    <!-- Each input takes product information -->
+    <input type="text" id="productName" placeholder="Product Name">
+    <input type="text" id="productCategory" placeholder="Category">
+    <input type="number" id="productQuantity" placeholder="Quantity">
+    <input type="number" id="productPrice" placeholder="Price">
+
+    <!-- Button triggers saveProduct() JavaScript function -->
+    <button onclick="saveProduct()">Save Product</button>
+
+    <h3>Product List</h3>
+
+    <!-- Table structure where products will display -->
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Cat.</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+
+        <!-- Table body will be filled by JavaScript -->
+        <tbody id="productTable"></tbody>
+    </table>
+</div>
+
+<script>
+    /***********************************************
+     * Load existing products from localStorage
+     * localStorage works like a small browser database.
+     ***********************************************/
+    let products = JSON.parse(localStorage.getItem("products")) || [];
+
+    /***********************************************
+     * Function: showProducts()
+     * Purpose: Display all products inside the table
+     ***********************************************/
+    function showProducts() {
+        const table = document.getElementById("productTable");
+        table.innerHTML = ""; // Clears old content
+
+        // Loop through each product and build table rows
+        products.forEach((p, index) => {
+            table.innerHTML += `
+                <tr>
+                    <td>${p.name}</td>
+                    <td>${p.category}</td>
+                    <td>${p.quantity}</td>
+                    <td>${p.price}</td>
+                    <td>
+                        <!-- Edit calls editProduct(index) -->
+                        <button onclick="editProduct(${index})">Edit</button> 
+                        <!-- Delete calls deleteProduct(index) -->
+                        <button class="delete-btn" onclick="deleteProduct(${index})">Delete</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    /***********************************************
+     * Function: saveProduct()
+     * Purpose: Add new product or update an existing product
+     ***********************************************/
+    function saveProduct() {
+        // Get each input field value
+        const id = document.getElementById("productId").value;
+        const name = document.getElementById("productName").value;
+        const category = document.getElementById("productCategory").value;
+        const quantity = document.getElementById("productQuantity").value;
+        const price = document.getElementById("productPrice").value;
+
+        // Validations
+        if (!name || !category || !quantity || !price) {
+            alert("Please fill all fields!");
+            return;
+        }
+
+        // Product object
+        const product = { name, category, quantity, price };
+
+        if (id === "") {
+            // New product → push to array
+            products.push(product);
+        } else {
+            // Edit mode → replace product at index
+            products[id] = product;
+        }
+
+        // Save updated array to localStorage
+        localStorage.setItem("products", JSON.stringify(products));
+
+        // Clear form and refresh list
+        resetForm();
+        showProducts();
+    }
+
+    /***********************************************
+     * Function: editProduct(index)
+     * Purpose: Load product into form for editing
+     ***********************************************/
+    function editProduct(index) {
+        const p = products[index];
+
+        document.getElementById("productId").value = index; // Set edit mode
+        document.getElementById("productName").value = p.name;
+        document.getElementById("productCategory").value = p.category;
+        document.getElementById("productQuantity").value = p.quantity;
+        document.getElementById("productPrice").value = p.price;
+    }
+
+    /***********************************************
+     * Function: deleteProduct(index)
+     * Purpose: Remove product from list
+     ***********************************************/
+    function deleteProduct(index) {
+        if (confirm("Are you sure?")) {
+            products.splice(index, 1); // Remove item from array
+
+            // Update localStorage
+            localStorage.setItem("products", JSON.stringify(products));
+
+            showProducts(); // Refresh table
+        }
+    }
+
+    /***********************************************
+     * Function: resetForm()
+     * Purpose: Clear input fields after save/edit
+     ***********************************************/
+    function resetForm() {
+        document.getElementById("productId").value = "";
+        document.getElementById("productName").value = "";
+        document.getElementById("productCategory").value = "";
+        document.getElementById("productQuantity").value = "";
+        document.getElementById("productPrice").value = "";
+    }
+
+    // Show products when page loads
+    showProducts();
+</script>
+
+</body>
+</html>
